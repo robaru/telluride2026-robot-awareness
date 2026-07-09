@@ -47,7 +47,7 @@ import numpy as np
 import scipy.signal as sig
 
 # ---------- the knobs (keep in sync with the notebook) ----------
-FS         = 44100
+FS         = 48000
 WIN_S      = 0.1              # analysis window (s)
 HOP_S      = 0.05             # hop between decisions (s)
 NPERSEG    = 2048             # STFT segment

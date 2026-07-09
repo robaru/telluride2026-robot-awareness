@@ -1,0 +1,32 @@
+# Audio recordings
+recordings/
+recordings with big drone/
+*.wav
+*.mp3
+*.flac
+*.ogg
+
+# Large data files
+*.ipynb_checkpoints/
+__pycache__/
+*.pyc
+.DS_Store
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Old/archived code
+old/
+
+# Environment
+.env
+.env.local
+
+# IDE
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

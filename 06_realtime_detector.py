@@ -206,23 +206,40 @@ class DuckReflex:
         return dict(slope=float(slope), rel=float(rel), ducked=self.ducked_at is not None)
 
 
-def send_spot_duck(host="192.168.167.163", port=9090):
-    """Take Spot's lease, duck, release — in a thread so audio never blocks."""
-    import threading
+class SpotClient:
+    """One persistent rosbridge connection: opened at startup (after calibration),
+    closed on Ctrl-C. duck() only makes the Service call."""
 
-    def _go():
+    def __init__(self, host="192.168.167.163", port=9090):
+        import roslibpy
+        self._roslibpy = roslibpy
+        print(f"connecting to Spot at {host}:{port} ...")
+        self.client = roslibpy.Ros(host=host, port=port)
+        self.client.run(timeout=10)
+        if not self.client.is_connected:
+            raise SystemExit(f"could not connect to Spot at {host}:{port} — "
+                             "check the BrainAirWaves wifi / rosbridge")
+        print("connected to Spot")
+
+    def duck(self):
+        import threading
+
+        def _go():
+            try:
+                self._roslibpy.Service(self.client, "/D02/spot/duck",
+                                       "std_srvs/Trigger").call(
+                    self._roslibpy.ServiceRequest())
+            except Exception as e:                          # demo must not die with Spot
+                print(f"\n[spot] duck failed: {e}")
+
+        threading.Thread(target=_go, daemon=True).start()   # audio loop never blocks
+
+    def close(self):
         try:
-            import roslibpy
-            client = roslibpy.Ros(host=host, port=port)
-            client.run(timeout=5)
-            for srv in ("take", "duck", "release"):
-                roslibpy.Service(client, f"/D02/spot/{srv}",
-                                 "std_srvs/Trigger").call(roslibpy.ServiceRequest())
-            client.terminate()
-        except Exception as e:                              # demo must not die with Spot
-            print(f"\n[spot] duck failed: {e}")
-
-    threading.Thread(target=_go, daemon=True).start()
+            self.client.terminate()
+            print("spot connection closed")
+        except Exception:
+            pass
 
 
 def calibrate_from_audio(x):
@@ -461,12 +478,24 @@ def main():
 
     w_bg, thr_on = get_calibration(args)
     det = LiveDroneDetector(w_bg, thr_on)
-    reflex = None if args.no_duck else DuckReflex(send_spot_duck if args.spot else None)
-    if args.wav:
-        run_stream(wav_chunks(args.wav, args.realtime), det, reflex,
-                   realtime_note=f" to {Path(args.wav).name}")
-    else:
-        run_stream(mic_chunks(args.device), det, reflex)
+    spot = SpotClient() if args.spot else None                # connect after calibration
+    reflex = None if args.no_duck else DuckReflex(spot.duck if spot else None)
+    if reflex and not spot:
+        print(paint("\n" + "!" * 66, "1;31"))
+        print(paint("!!  SPOT IS DISABLED — dry run, ducks are only printed        !!", "1;31"))
+        print(paint("!!  add --spot to actually send the duck command to the robot !!", "1;31"))
+        print(paint("!" * 66 + "\n", "1;31"))
+    elif reflex:
+        print(paint("SPOT ARMED — duck commands WILL be sent to the robot\n", "1;32"))
+    try:
+        if args.wav:
+            run_stream(wav_chunks(args.wav, args.realtime), det, reflex,
+                       realtime_note=f" to {Path(args.wav).name}")
+        else:
+            run_stream(mic_chunks(args.device), det, reflex)
+    finally:
+        if spot:                                            # clean shutdown on Ctrl-C too
+            spot.close()
 
 
 if __name__ == "__main__":

@@ -122,9 +122,11 @@ Network: connect to **BrainAirWaves** wifi, Spot's rosbridge at `192.168.167.163
 (`ping` should answer in ~50 ms; `pip install roslibpy`). `spot_duck.py` shows the full
 duck sequence: take lease → `/D02/spot/duck` → release.
 
-**Wired in:** `06_realtime_detector.py --spot` calls exactly that sequence (in a daemon
-thread with a 5-s connect timeout, so a dead link can't stall the audio loop) whenever
-the duck reflex triggers. Verified on all six recordings in replay: one duck per
+**Wired in:** with `--spot` the script opens **one persistent rosbridge connection at
+startup** (right after calibration — fails fast with a clear message if Spot is
+unreachable) and closes it on Ctrl-C; each duck is then just the `/D02/spot/duck`
+service call, fired from a daemon thread so the audio loop never blocks. Without
+`--spot` a big red banner at startup says Spot is disabled and ducks are print-only. Verified on all six recordings in replay: one duck per
 approach, anticipatory (fires ~2–3 s before closest approach on the looming cycles),
 zero ducks on 192 s of pure crowd. **Remaining: run it once against the real robot** —
 in particular check whether Spot auto-recovers from the duck or needs an explicit

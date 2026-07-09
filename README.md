@@ -1,17 +1,10 @@
 # Audio-Based Robot Awareness for Peripersonal Space
 
-A [Telluride 2026](https://tellurideneuromorphic.org/) collaborative project combining neuromorphic robotics and audio signal processing for robot-aware situational awareness.
-
-## Overview
-
-This project explores how robots can develop awareness of dynamic events in their peripersonal space (the region immediately surrounding a robot) using audio processing. We leverage principles from:
-
-- **RobNIC26**: Neuromorphic Robotics & Integrated Circuitry — applying brain-inspired approaches to robot perception and action
-- **SYNC26**: Spatiotemporal Dynamics in Neural Computation — analyzing temporal patterns in audio signals to detect and classify dynamic events
+A [Telluride 2026](https://tellurideneuromorphic.org/) collaborative project combining robotics and audio signal processing for robot-aware situational awareness.
 
 ## Current Focus
 
-Audio-based detection and classification of aerial vehicles (drones) using neuromorphic signal processing techniques. The system processes real-time audio feeds to identify drone presence and characteristics.
+Audio-based detection of an drone using simple signal processing techniques. The system processes real-time audio feeds to identify drone presence with the plan to have Spot (Boston Dynamic robot dog) to duck as to simulate collision avoidance.
 
 ## Key Files
 

@@ -64,7 +64,9 @@ conda activate telluride
 # demo day, in the demo room:
 python 06_realtime_detector.py          # calibrates 10 s at startup (drone OFF, fan ON,
                                         # people talking is GOOD — threshold learns it),
-                                        # then detects; add --spot to command the robot
+                                        # then detects and commands Spot to duck
+python 06_realtime_detector.py --dry-run   # print-only mode (no Spot commands) — test the
+                                           # detector without the robot attached
 python 06_realtime_detector.py --load-cal  # skip calibration, reuse drone_cal.npz —
                                            # for a restart while the drone is airborne
 ```
@@ -95,7 +97,7 @@ If it misbehaves on site:
 
 | file | what it is |
 |---|---|
-| `06_realtime_detector.py` | **The live tool.** Mic in, terminal out. Same math as the notebook, plus the **duck reflex**: ducks when the drone's 8–16 kHz level rises ≥ `SLOPE_DUCK` (1 dB/s ≈ charging, time-to-contact < 9 s) or sits ≥ `CLOSE_DB` (5 dB) above its detection-onset level; armed 3 s after detection (so the takeoff ramp can't fake a charge); stays down while the drone hovers close; stands up when it leaves; re-arms per approach. Prints `>>> DUCK <<<` by default, `--spot` sends take/duck/release to Spot (in a thread, failure-safe). `--no-duck` disables. |
+| `06_realtime_detector.py` | **The live tool.** Mic in, terminal out. Same math as the notebook, plus the **duck reflex**: ducks when the drone's 8–16 kHz level rises ≥ `SLOPE_DUCK` (1 dB/s ≈ charging, time-to-contact < 9 s) or sits ≥ `CLOSE_DB` (5 dB) above its detection-onset level; armed 3 s after detection (so the takeoff ramp can't fake a charge); stays down while the drone hovers close; stands up when it leaves; re-arms per approach. Sends take/duck/release to Spot by default (in a thread, failure-safe); `--dry-run` prints only. `--no-duck` disables the reflex. |
 | `05_psd_profile_drone_detector.ipynb` | **The documentation.** Step-by-step derivation of the detector with a plot per step, threshold learning, causal replay, and validation on both sessions. Read this to understand the design; re-run top-to-bottom (~3 min) after changing anything. |
 | `07_looming_distance_velocity.ipynb` | **Distance/velocity/time-to-contact** from the looming recordings: relative range from the 8–16 kHz level (−6 dB per distance doubling), approach/recede state from its slope, calibration-free τ = 8.686/slope. Includes a causal `LoomingTracker` class ready to wire into the live script, and a suggested duck rule (`detected AND (r < 1.5 m OR τ < 5 s)`). |
 | `drone_cal.npz` | Saved calibration (background profile + learned threshold). Refreshed automatically at every mic start; only `--load-cal` runs reuse it. |
@@ -122,13 +124,13 @@ Network: connect to **BrainAirWaves** wifi, Spot's rosbridge at `192.168.167.163
 (`ping` should answer in ~50 ms; `pip install roslibpy`). `spot_duck.py` shows the full
 duck sequence: take lease → `/D02/spot/duck` → release.
 
-**Wired in:** with `--spot` the script opens **one persistent rosbridge connection at
+**Wired in:** by default the script opens **one persistent rosbridge connection at
 startup** (right after calibration — fails fast with a clear message if Spot is
 unreachable) and closes it on Ctrl-C; each duck is then just the `/D02/spot/duck`
-service call, fired from a daemon thread so the audio loop never blocks. Without
-`--spot` a big red banner at startup says Spot is disabled and ducks are print-only. Verified on all six recordings in replay: one duck per
-approach, anticipatory (fires ~2–3 s before closest approach on the looming cycles),
-zero ducks on 192 s of pure crowd. **Remaining: run it once against the real robot** —
+service call, fired from a daemon thread so the audio loop never blocks. `--dry-run`
+skips the connection and prints ducks only (test mode). Verified on all six recordings
+in replay: one duck per approach, anticipatory (fires ~2–3 s before closest approach on
+the looming cycles), zero ducks on 192 s of pure crowd. **Remaining: run it once against the real robot** —
 in particular check whether Spot auto-recovers from the duck or needs an explicit
 stand command on the "threat passed" event (the hook exists in `run_stream`).
 

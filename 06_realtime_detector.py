@@ -13,16 +13,16 @@ people talking loudly is good, it raises the threshold to match.
 
 DUCK REFLEX (wow over precision): while a drone is detected, duck when its 8-16 kHz
 level RISES faster than SLOPE_DUCK dB/s (= it is charging; time-to-contact < ~9 s)
-or sits CLOSE_DB above its level at detection (= it is near). Prints ">>> DUCK <<<"
-by default; --spot actually sends take/duck/release to Spot over rosbridge.
+or sits CLOSE_DB above its level at detection (= it is near). By default sends
+take/duck/release to Spot over rosbridge; --dry-run prints only.
 Fly assertively at the robot — a faster approach triggers earlier and looks better.
 
 Usage:
-    python 06_realtime_detector.py                    # mic; 10-s calibration at startup
-                                                      #   (keep the drone OFF for those 10 s)
+    python 06_realtime_detector.py                    # mic; 10-s calibration at startup,
+                                                      #   then detects and commands Spot
+    python 06_realtime_detector.py --dry-run          # print-only, don't send to Spot
     python 06_realtime_detector.py --load-cal         # skip calibration, reuse drone_cal.npz
                                                       #   (mid-demo restart, drone airborne)
-    python 06_realtime_detector.py --spot             # actually send the duck to Spot
     python 06_realtime_detector.py --cal-secs 30      # longer calibration
     python 06_realtime_detector.py --device 2         # pick an input device
     python 06_realtime_detector.py --list-devices
@@ -467,8 +467,8 @@ def main():
                          "loading drone_cal.npz")
     ap.add_argument("--cal-secs", type=float, default=10.0,
                     help="calibration length in seconds (default 10)")
-    ap.add_argument("--spot", action="store_true",
-                    help="actually send the duck command to Spot (default: print only)")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="print-only mode, don't send duck commands to Spot")
     ap.add_argument("--no-duck", action="store_true", help="disable the duck reflex")
     args = ap.parse_args()
 
@@ -478,13 +478,12 @@ def main():
 
     w_bg, thr_on = get_calibration(args)
     det = LiveDroneDetector(w_bg, thr_on)
-    spot = SpotClient() if args.spot else None                # connect after calibration
+    spot = SpotClient() if not args.dry_run else None         # connect after calibration
     reflex = None if args.no_duck else DuckReflex(spot.duck if spot else None)
-    if reflex and not spot:
-        print(paint("\n" + "!" * 66, "1;31"))
-        print(paint("!!  SPOT IS DISABLED — dry run, ducks are only printed        !!", "1;31"))
-        print(paint("!!  add --spot to actually send the duck command to the robot !!", "1;31"))
-        print(paint("!" * 66 + "\n", "1;31"))
+    if reflex and args.dry_run:
+        print(paint("\n" + "!" * 66, "1;33"))
+        print(paint("!!  DRY RUN — ducks are printed only, not sent to Spot         !!", "1;33"))
+        print(paint("!" * 66 + "\n", "1;33"))
     elif reflex:
         print(paint("SPOT ARMED — duck commands WILL be sent to the robot\n", "1;32"))
     try:

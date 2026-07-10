@@ -29,7 +29,8 @@ Plug USB-C PnP microphone to computer and run:
 python 06_realtime_detector.py           # 10-s calibration at every start (drone OFF,
                                          # people talking is good — the detection
                                          # threshold is learned from it), then detects
-python 06_realtime_detector.py --spot    # enable script to send commands to spot
+                                         # and commands Spot to duck
+python 06_realtime_detector.py --dry-run # test mode: print-only, don't send to Spot
 ```
 
 (the script is configured to listen to PnP mic, if not available, then the script selects the system default).

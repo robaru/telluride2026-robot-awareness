@@ -35,6 +35,16 @@ python 06_realtime_detector.py --dry-run # test mode: print-only, don't send to 
 
 (the script is configured to listen to PnP mic, if not available, then the script selects the system default).
 
+## Demo
+
+Detector in action:
+
+![Detector working](stuff/Screenshot%202026-07-09%20at%2016.28.21.png)
+
+Spot responding to detected approaching drone:
+
+![Spot ducking](stuff/signal-2026-07-09-20-16-23-494.gif)
+
 ## References
 
 - [Telluride 2026 Workshop](https://tellurideneuromorphic.org/)
